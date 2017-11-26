@@ -14,13 +14,20 @@ pub struct SearchResult {
 }
 
 impl Config {
-    pub fn new(args: &[String]) -> Result<Config, &str> {
-        if args.len() < 3 {
-            return Err("Not enough arguments - pass a query string followed by a filename");
-        }
+    pub fn new(mut args: std::env::Args) -> Result<Config, &'static str> {
+        //skip over the executable name
+        args.next();
 
-        let query = args[1].clone();
-        let filename = args[2].clone();
+        let query = match args.next() {
+            Some(arg) => arg,
+            None => return Err("No query string found")
+        };
+
+        let filename = match args.next() {
+            Some(arg) => arg,
+            None => return Err("No filename found")
+        };
+
         return Ok(Config {
             query,
             filename
@@ -42,16 +49,18 @@ pub fn run(config: Config) -> Result<(), Box<Error>> {
 }
 
 pub fn search<'a>(query: &str, contents: &'a str) -> Vec<SearchResult> {
-    let mut results = Vec::new();
-    for (idx, line) in contents.lines().enumerate() {
-        if line.contains(query) {
-            results.push(SearchResult {
-                line_number: idx + 1,
-                contents: line.trim_left().to_string()
-            });
-        }
-    }
-    results
+    contents.lines()
+        .enumerate()
+        .filter_map(|(idx, line)| {
+            if line.contains(query) {
+                Some(SearchResult {
+                    line_number: idx + 1,
+                    contents: line.trim_left().to_string()
+                })
+            } else {
+                None
+            }
+        }).collect()
 }
 
 #[cfg(test)]
