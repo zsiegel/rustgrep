@@ -7,16 +7,10 @@ pub struct Config {
     filename: String
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct SearchResult {
     line_number: usize,
     contents: String
-}
-
-impl PartialEq for SearchResult {
-    fn eq(&self, other: &SearchResult) -> bool {
-        self.contents == other.contents && self.line_number == other.line_number
-    }
 }
 
 impl Config {
@@ -35,13 +29,14 @@ impl Config {
 }
 
 pub fn run(config: Config) -> Result<(), Box<Error>> {
-    let mut file = File::open(config.filename)?;
+    let filename = &config.filename;
+    let mut file = File::open(filename)?;
 
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
 
     for search_result in search(&config.query, &contents) {
-        println!("line {}: {}", search_result.line_number, search_result.contents);
+        println!("{}:{} {}", filename, search_result.line_number, search_result.contents);
     }
     Ok(())
 }
