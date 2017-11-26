@@ -1,0 +1,6 @@
+[package]
+name = "rustgrep"
+version = "0.0.0"
+authors = ["Zac Siegel"]
+
+[dependencies]

@@ -1,0 +1,2 @@
+write_mode = "overwrite"
+struct_trailing_comma = "Never"
