@@ -1,5 +1,6 @@
 use std::error::Error;
 use std::fs::File;
+use std::io::BufReader;
 use std::io::prelude::*;
 
 pub struct Config {
@@ -34,12 +35,10 @@ impl Config {
 
 pub fn run(config: Config) -> Result<(), Box<Error>> {
     let filename = &config.filename;
-    let mut file = File::open(filename)?;
+    let file = File::open(filename)?;
 
-    let mut contents = String::new();
-    file.read_to_string(&mut contents)?;
-
-    for search_result in search(&config.query, &contents) {
+    let mut reader = BufReader::new(file);
+    for search_result in search(&config.query, &mut reader) {
         println!(
             "{}:{} {}",
             filename,
@@ -50,18 +49,23 @@ pub fn run(config: Config) -> Result<(), Box<Error>> {
     Ok(())
 }
 
-pub fn search<'a>(query: &str, contents: &'a str) -> Vec<SearchResult> {
-    contents
+pub fn search<'a>(query: &str, reader: &mut BufReader<File>) -> Vec<SearchResult> {
+    reader
         .lines()
         .enumerate()
-        .filter_map(|(idx, line)| if line.contains(query) {
-            Some(SearchResult {
-                line_number: idx + 1,
-                contents: line.trim_left().to_string(),
+        .filter_map(|(idx, line)|
+            match line {
+                Err(_) => None,
+                Ok(content) =>
+                    if content.contains(query) {
+                        Some(SearchResult {
+                            line_number: idx + 1,
+                            contents: content.trim_left().to_string(),
+                        })
+                    } else {
+                        None
+                    }
             })
-        } else {
-            None
-        })
         .collect()
 }
 
